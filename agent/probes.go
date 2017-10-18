@@ -31,7 +31,7 @@ import (
 )
 
 // NewTopologyProbeBundleFromConfig creates a new topology probe.ProbeBundle based on the configuration
-func NewTopologyProbeBundleFromConfig(g *graph.Graph, n *graph.Node) (*probe.ProbeBundle, error) {
+func NewTopologyProbeBundleFromConfig(g *graph.Graph, n *graph.Node, r *graph.Receiver) (*probe.ProbeBundle, error) {
 	list := config.GetConfig().GetStringSlice("agent.topology.probes")
 	logging.GetLogger().Infof("Topology probes: %v", list)
 

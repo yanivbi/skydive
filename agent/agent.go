@@ -62,6 +62,7 @@ type Agent struct {
 	httpServer          *shttp.Server
 	tidMapper           *topology.TIDMapper
 	topologyForwarder   *TopologyForwarder
+	receiver            *graph.Receiver
 }
 
 // NewAnalyzerWSJSONClientPool creates a new http WebSocket client Pool
@@ -77,7 +78,7 @@ func NewAnalyzerWSJSONClientPool() (*shttp.WSJSONClientPool, error) {
 
 	for _, sa := range addresses {
 		authClient := shttp.NewAuthenticationClient(sa.Addr, sa.Port, authOptions)
-		c := shttp.NewWSClientFromConfig(common.AgentService, sa.Addr, sa.Port, "/ws", authClient)
+		c := shttp.NewWSClientFromConfig(common.UnknownService, sa.Addr, sa.Port, "/ws", authClient)
 		pool.AddClient(c)
 	}
 
@@ -126,7 +127,7 @@ func (a *Agent) Start() {
 	a.topologyProbeBundle.Start()
 	a.flowProbeBundle.Start()
 	a.onDemandProbeServer.Start()
-
+         
 	// everything is ready, then initiate the websocket connection
 	go a.analyzerClientPool.ConnectAll()
 }
@@ -192,7 +193,9 @@ func NewAgent() (*Agent, error) {
 
 	tforwarder := NewTopologyForwarderFromConfig(g, analyzerClientPool)
 
-	topologyProbeBundle, err := NewTopologyProbeBundleFromConfig(g, rootNode)
+	receiver := graph.NewReceiver(g, analyzerClientPool)
+
+	topologyProbeBundle, err := NewTopologyProbeBundleFromConfig(g, rootNode, receiver)
 	if err != nil {
 		return nil, err
 	}
@@ -243,6 +246,7 @@ func NewAgent() (*Agent, error) {
 		httpServer:          hserver,
 		tidMapper:           tm,
 		topologyForwarder:   tforwarder,
+		receiver:            receiver,
 	}
 
 	api.RegisterStatusAPI(hserver, agent)
