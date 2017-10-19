@@ -7,6 +7,7 @@ var nsImg = 'statics/img/ns.png';
 var bridgeImg = 'statics/img/bridge.png';
 var dockerImg = 'statics/img/docker.png';
 var neutronImg = 'statics/img/openstack.png';
+var k8sImg = 'statics/img/k8s.png';
 
 var minusImg = 'statics/img/minus-outline-16.png';
 var plusImg = 'statics/img/plus-16.png';
@@ -72,6 +73,12 @@ var TopologyGraphLayout = function(vm, selector) {
     .then(function() {
       self.bandwidth.intervalID = setInterval(self.updateBandwidth.bind(self), self.bandwidth.updatePeriod);
     });
+
+  this.loadBandwidthConfig()
+    .then(function() {
+      setInterval(self.updateNetworkPolicy.bind(self), self.bandwidth.updatePeriod);
+    });
+
 };
 
 TopologyGraphLayout.prototype = {
@@ -146,8 +153,24 @@ TopologyGraphLayout.prototype = {
     }, 1000);
   },
 
+  linkStrength: function(e) {
+    var strength = 0.9;
+
+
+    if ((e.source.metadata.Type == "netns") && (e.target.metadata.Type == "netns"))
+      return 0.01;
+
+     return strength;
+ },
+
   linkDistance: function(e) {
     var distance = 100, coeff;
+
+    // application
+
+    if ((e.source.metadata.Type == "netns") && (e.target.metadata.Type == "netns"))
+      return 1800;
+
     if (e.source.group !== e.target.group) {
       if (e.source.isGroupOwner()) {
         coeff = e.source.group.collapsed ? 40 : 60;
@@ -1072,6 +1095,89 @@ TopologyGraphLayout.prototype = {
     return 0;
   },
 
+
+  updateNetworkPolicy: function() {
+      var i, link, links = this.links;
+      for (i in links){
+        link = links[i]
+        if (link.metadata.LinkType == "k8s policy") {
+            var netPolicy = link.metadata.NetworkPolicy
+            var direction = link.metadata.Direction
+            var fromTo = link.metadata.FromTo
+            var From = link.metadata.From
+            var To = link.metadata.To
+            var textToPrint
+
+           if (link.target.x < link.source.x) {
+                if (direction=='->') {
+                    textToPrint = To + ' <--- ' + From
+                }else{
+                    textToPrint = To + ' <---> ' + From
+                }
+            } else {
+                if (direction=='->') {
+                    textToPrint = From + ' ---> ' + To
+                }else{
+                    textToPrint = From + ' <---> ' + To
+                }
+            }
+
+            if (netPolicy) {
+                if (link.target.x < link.source.x) {
+                    textToPrint = '('+netPolicy+') ' + textToPrint
+                }else{
+                    textToPrint = textToPrint + ' ('+netPolicy+')'
+                }
+            }
+
+            this.linkLabels[link.id] = {
+              id: "link-label-" + link.id,
+              link: link,
+              text: textToPrint
+            };
+
+            this.linkLabel = this.linkLabel.data(Object.values(this.linkLabels), function(d) { return d.id; });
+            this.linkLabel.exit().remove();
+
+            var linkLabelEnter = this.linkLabel.enter()
+              .append('text')
+              .attr("id", "link-label-" + link.id)
+              .attr("class", "link-label");
+            linkLabelEnter.append('textPath')
+              .attr("startOffset", "50%")
+              .attr("xlink:href", "#link-" + link.id);
+
+            this.linkLabel = linkLabelEnter.merge(this.linkLabel);
+
+            this.linkLabel.select('textPath')
+              .style("font-size","30px")
+              .style("fill", "white")
+              .style("stroke", "black")
+              .text(function(d) { return d.text; });
+
+            link_elem = d3.select("#link-"+link.id);
+            link_elem.style("stroke-dasharray", "20")
+                     .style("stroke-dashoffset", "80");
+
+            if (direction=='->') {
+                link_elem.style("animation", "line 0.75s linear forwards infinite")
+                         .style("stroke", "rgb(50, 109, 230)")
+                         .style("stroke-width", 5);
+            } else {
+                link_elem.style("animation", "line 0.75s linear forwards infinite")
+                     .style("stroke", "rgb(50, 109, 230)")
+                     .style("stroke-width", 5);
+
+            }
+            // force a tick
+           this.tick();
+
+        }
+      }
+  },
+
+
+
   updateBandwidth: function() {
     var bandwidth = this.bandwidth, defaultInterfaceSpeed = 1048576;
 
@@ -1282,7 +1388,11 @@ TopologyGraphLayout.prototype = {
 
   managerImg: function(d) {
     switch(d.metadata.Manager) {
-      case "docker": return dockerImg;
+      case "docker":
+          if (d.metadata.Orchestrator === "k8s")
+              return k8sImg;
+          else
+              return dockerImg;
       case "neutron": return neutronImg;
     }
   },
