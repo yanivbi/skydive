@@ -83,6 +83,8 @@ func NewTopologyProbeBundleFromConfig(g *graph.Graph, n *graph.Node, r *graph.Re
 			probes[t] = tprobes.NewOpenContrailProbeFromConfig(g, n)
 		case "k8s":
 			probes[t] = tprobes.NewK8SProbe(g, r)
+		case "k8sctl":
+			probes[t] = tprobes.NewK8SCtlProbe(g, r)
 		default:
 			logging.GetLogger().Errorf("unknown probe type %s", t)
 		}
