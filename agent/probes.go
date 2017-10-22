@@ -81,6 +81,8 @@ func NewTopologyProbeBundleFromConfig(g *graph.Graph, n *graph.Node, r *graph.Re
 			probes["neutron"] = neutron
 		case "opencontrail":
 			probes[t] = tprobes.NewOpenContrailProbeFromConfig(g, n)
+		case "k8s":
+			probes[t] = tprobes.NewK8SProbe(g, r)
 		default:
 			logging.GetLogger().Errorf("unknown probe type %s", t)
 		}
