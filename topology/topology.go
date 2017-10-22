@@ -165,8 +165,8 @@ func AddOwnershipLink(g *graph.Graph, parent *graph.Node, child *graph.Node, met
 	// do not add or change original metadata
 	m := metadata.Clone()
 	m["RelationType"] = OwnershipLink
-
-	return g.Link(parent, child, m)
+ 	Edge,_ := g.Link(parent, child, m)
+	return Edge
 }
 
 // HaveLayer2Link returns true if parent and child have the same layer 2
@@ -183,6 +183,6 @@ func AddLayer2Link(g *graph.Graph, node1 *graph.Node, node2 *graph.Node, metadat
 	// do not add or change original metadata
 	m := metadata.Clone()
 	m["RelationType"] = Layer2Link
-
-	return g.Link(node1, node2, m)
+	Edge,_ := g.Link(node1, node2, m)
+	return Edge
 }

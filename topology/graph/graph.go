@@ -815,11 +815,12 @@ func (g *Graph) AreLinked(n1 *Node, n2 *Node, m Metadata) bool {
 }
 
 // Link the nodes n1, n2 with a new edge
-func (g *Graph) Link(n1 *Node, n2 *Node, m Metadata) *Edge {
+func (g *Graph) Link(n1 *Node, n2 *Node, m Metadata) (*Edge,Identifier) {
+	ID := GenID()
 	if len(m) > 0 {
-		return g.NewEdge(GenID(), n1, n2, m)
+		return g.NewEdge(ID, n1, n2, m), ID
 	}
-	return g.NewEdge(GenID(), n1, n2, nil)
+	return g.NewEdge(ID, n1, n2, nil), ID
 }
 
 // Unlink the nodes n1, n2 ; delete the associated edge
