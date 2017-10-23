@@ -95,6 +95,8 @@ agent:
       # - docker
       # - neutron
       # - opencontrail
+      # - k8s
+      # - k8sctl
     netlink:
       # delay in seconds between two metric updates
       # metrics_update: 30
@@ -213,3 +215,11 @@ flow:
   update: 60
   # Protocol to use to send flows to the analyzer: websocket or udp
   # protocol: udp
+
+k8s:
+  # The KUBECONFIG yml file, if k8sctl is executed inside the cluster, you may use the empty config file - kube-config-empty.yml
+  config_file: <KUBECONFIG>
+  # Time between network policies updates
+  polling_rate: 5s
+  # The host which runs the k8sctl probe (only one host), host name can be obtained by skydive agent ... | grep "Host is:" 
+  host_ctl: <host-name>
